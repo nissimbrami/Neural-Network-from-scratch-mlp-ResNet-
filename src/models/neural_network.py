@@ -64,17 +64,14 @@ class NeuralNetwork:
     def compute_cost(self, AL, Y):
         m = Y.shape[0]
 
-        # נרמול נומרי לפני הsoftmax
         scores = AL
         scores_shifted = scores - np.max(scores, axis=1, keepdims=True)
         exp_scores = np.exp(scores_shifted)
         probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
 
-        # חישוב cross-entropy loss
         correct_log_probs = -np.log(probs[range(m), Y] + 1e-15)
         data_loss = np.sum(correct_log_probs) / m
 
-        # רגולריזציה
         reg_loss = 0
         if self.regularization == 'l2':
             for l in range(1, self.L + 1):
@@ -115,10 +112,8 @@ class NeuralNetwork:
         gradients = {}
         m = Y.shape[0]
 
-        # חישוב הLoss והגרדיאנט ההתחלתי
         cost, dAL = self.compute_cost(AL, Y)
 
-        # השכבה האחרונה
         current_cache = self.cache[f'layer{self.L}']
         dA_prev_temp, dW_temp, db_temp = self.linear_activation_backward(dAL, current_cache, self.L)
 
@@ -128,7 +123,6 @@ class NeuralNetwork:
         gradients[f'dW{self.L}'] = dW_temp
         gradients[f'db{self.L}'] = db_temp
 
-        # שאר השכבות
         for l in reversed(range(1, self.L)):
             current_cache = self.cache[f'layer{l}']
             dA_prev_temp, dW_temp, db_temp = self.linear_activation_backward(dA_prev_temp, current_cache, l)
@@ -142,19 +136,14 @@ class NeuralNetwork:
         return gradients, cost
 
     def train_step(self, X, Y):
-        """
-        ביצוע צעד אימון בודד
-        """
+     
         AL = self.forward_prop(X)
         gradients, cost = self.backward_prop(AL, Y)
         return gradients, cost
 
-    # בתוך מחלקת NeuralNetwork:
 
     def gradient_check(self, X, Y, epsilon=1e-7):
-        """
-        בדיקת גרדיאנט מקיפה עם פלט מאורגן
-        """
+   
         tolerance = np.sqrt(epsilon)
 
         print("\n" + "=" * 50)
@@ -217,7 +206,6 @@ class NeuralNetwork:
                             'error': rel_error
                         })
 
-            # הצגה מרוכזת של השגיאות
             if failures:
                 print(f"\nנמצאו {len(failures)} שגיאות:")
                 print("-" * 60)
@@ -244,34 +232,26 @@ class NeuralNetwork:
         print("=" * 50)
 
     def comprehensive_gradient_check(self, X, Y, epsilon=1e-7):
-        """
-        בדיקת גרדיאנט מקיפה לכל חלקי הרשת
-        """
+  
         print("\nמתחיל בדיקת גרדיאנט מקיפה...")
 
-        # 1. בדיקת שכבות בודדות
         for l in range(1, self.L + 1):
             print(f"\nבודק שכבה {l}:")
             A_prev = self.cache[f'A{l - 1}']
             W = self.parameters[f'W{l}']
             b = self.parameters[f'b{l}']
 
-            # בדיקה עם פונקציית tanh
             old_activation = self.activation
             self.activation = 'tanh'
 
-            # Forward pass
             Z, cache = self.linear_forward(A_prev, W, b)
             A = self.activation_forward(Z)
 
-            # יצירת הפרעה
             dA = np.random.randn(*A.shape)
 
-            # Backward pass
             dZ = self.activation_backward(dA, Z)
             dA_prev, dW, db = self.linear_backward(dZ, cache)
 
-            # בדיקה נומרית
             from src.utils.gradient_tests import plot_slope_test
 
             def f_W(W_test):
@@ -281,10 +261,8 @@ class NeuralNetwork:
 
             plot_slope_test(f_W, W, dW, f'Layer {l} - Weights')
 
-            # החזרת פונקציית ההפעלה המקורית
             self.activation = old_activation
 
-        # 2. בדיקת הרשת השלמה
         print("\nבודק את הרשת השלמה:")
 
         gradients, cost = self.train_step(X, Y)
@@ -303,29 +281,16 @@ class NeuralNetwork:
             plot_slope_test(f_full, param, grad, f'Full Network - {param_name}')
 
     def compute_cost(self, AL, Y):
-        """
-        חישוב פונקציית העלות והגרדיאנט שלה
 
-        Parameters:
-        AL: הפלט של השכבה האחרונה של הרשת
-        Y: התוויות האמיתיות
-
-        Returns:
-        total_loss: העלות הכוללת
-        dscores: הגרדיאנט של העלות
-        """
         m = Y.shape[0]
 
-        # נרמול נומרי לפני הsoftmax
         scores = AL - np.max(AL, axis=1, keepdims=True)
         exp_scores = np.exp(scores)
         probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
 
-        # חישוב cross-entropy loss
         correct_log_probs = -np.log(probs[range(m), Y] + 1e-15)
         data_loss = np.sum(correct_log_probs) / m
 
-        # רגולריזציה
         reg_loss = 0
         if self.regularization == 'l2':
             for l in range(1, self.L + 1):
@@ -334,7 +299,6 @@ class NeuralNetwork:
 
         total_loss = data_loss + reg_loss
 
-        # חישוב הגרדיאנט - השינוי היחיד הוא הסרת החלוקה ב-m כאן
         dscores = probs.copy()
         dscores[range(m), Y] -= 1
         # dscores /= m  <- מסירים את השורה הזו
@@ -346,22 +310,11 @@ class NeuralNetwork:
         return np.mean(predictions == Y)
 
     def predict(self, X):
-        """
-        חיזוי המחלקות עבור קלט X
 
-        Args:
-            X: מטריצת קלט בגודל (n_samples, n_features)
-
-        Returns:
-            predictions: וקטור חיזויים בגודל (n_samples,)
-        """
-        # Forward pass
         scores = self.forward_prop(X)
 
-        # המרה להסתברויות
         scores_shifted = scores - np.max(scores, axis=1, keepdims=True)
         exp_scores = np.exp(scores_shifted)
         probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
 
-        # החזרת המחלקה עם ההסתברות הגבוהה ביותר
         return np.argmax(probs, axis=1)
