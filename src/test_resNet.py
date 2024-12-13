@@ -9,13 +9,11 @@ from src.utils.trainer import NetworkTrainer
 
 
 def get_data_path():
-    """מציאת נתיב נכון לקבצי הנתונים"""
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_dir, 'data')
 
 
 def normalize_data(X_train, X_test):
-    """נרמול הנתונים"""
     mean = X_train.mean(axis=0)
     std = X_train.std(axis=0) + 1e-8
     X_train_norm = (X_train - mean) / std
@@ -24,9 +22,7 @@ def normalize_data(X_train, X_test):
 
 
 def test_resnet_on_dataset(dataset_name):
-    """
-    בדיקת ResNet על דאטאסט ספציפי עם הגדרות מותאמות
-    """
+   
     print(f"\n=== בדיקת ResNet על דאטאסט {dataset_name} ===")
 
     # טעינת נתונים
@@ -37,9 +33,7 @@ def test_resnet_on_dataset(dataset_name):
     input_dim = X_train.shape[1]
     num_classes = len(np.unique(y_train))
 
-    # פרמטרים מותאמים לכל דאטאסט
     if dataset_name == 'SwissRoll':
-        # תצורה חדשה ל-SwissRoll
         hidden_dim = 64  # הגדלה משמעותית של המימד הפנימי
         hidden_dim2 = 128  # מימד גדול יותר לשכבה האמצעית
         layer_dims = [input_dim, hidden_dim, hidden_dim2, hidden_dim, num_classes]
@@ -51,7 +45,6 @@ def test_resnet_on_dataset(dataset_name):
         use_dropout = False  # הסרת ה-dropout
         dropout_rate = 0.2
     else:  # GMM
-        # שמירה על הפרמטרים הטובים ל-GMM
         hidden_dim = 64
         layer_dims = [input_dim, hidden_dim, hidden_dim, num_classes]
         learning_rate = 0.001
@@ -74,7 +67,6 @@ def test_resnet_on_dataset(dataset_name):
     print(f"Momentum: {momentum}")
     print(f"Regularization lambda: {reg_lambda}")
 
-    # יצירת המודל
     model = ResNet(
         layer_dims=layer_dims,
         activation='relu',
@@ -84,13 +76,11 @@ def test_resnet_on_dataset(dataset_name):
         dropout_rate=dropout_rate
     )
 
-    # הגדרת האופטימייזר
     optimizer = SGDOptimizer(
         learning_rate=learning_rate,
         momentum=momentum
     )
 
-    # הגדרת המאמן
     trainer = NetworkTrainer(
         model=model,
         optimizer=optimizer,
@@ -99,7 +89,6 @@ def test_resnet_on_dataset(dataset_name):
         verbose=True
     )
 
-    # אימון
     print("\nמתחיל אימון...")
     history = trainer.train(X_train_norm, y_train, X_test_norm, y_test)
 
@@ -107,15 +96,12 @@ def test_resnet_on_dataset(dataset_name):
 
 
 def main():
-    """הרצת הניסויים על שני הדאטאסטים"""
     try:
         print("\nמתחיל ניסויים...")
 
-        # הרצה על SwissRoll
         print("\n=== ניסוי 1: SwissRoll ===")
         model_swiss, history_swiss = test_resnet_on_dataset('SwissRoll')
 
-        # הרצה על GMM
         print("\n=== ניסוי 2: GMM ===")
         model_gmm, history_gmm = test_resnet_on_dataset('GMM')
 
