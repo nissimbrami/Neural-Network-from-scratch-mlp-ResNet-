@@ -10,9 +10,7 @@ class ParameterExperiments:
         self.max_params = 100 * num_classes
 
     def count_parameters(self, layer_dims, is_resnet=False):
-        """
-        חישוב מספר הפרמטרים ברשת
-        """
+  
         total = 0
         for i in range(len(layer_dims) - 1):
             if is_resnet and i < len(layer_dims) - 2:
@@ -24,12 +22,9 @@ class ParameterExperiments:
         return total
 
     def design_networks(self):
-        """
-        תכנון ארכיטקטורות שונות עם מגבלת פרמטרים
-        """
+   
         networks = []
 
-        # 1. רשת צרה ועמוקה
         dims = [self.input_dim]
         curr_dim = self.input_dim
         total_params = 0
@@ -45,12 +40,10 @@ class ParameterExperiments:
         dims.append(self.num_classes)
         networks.append(('Narrow Deep', dims, False))
 
-        # 2. רשת רחבה ורדודה
         hidden_dim = int(np.sqrt(self.max_params / 2))
         dims = [self.input_dim, hidden_dim, self.num_classes]
         networks.append(('Wide Shallow', dims, False))
 
-        # 3. ResNet מינימלית
         resnet_dims = [self.input_dim]
         hidden_dim = max(self.input_dim, self.num_classes)
         while self.count_parameters(resnet_dims + [hidden_dim, self.num_classes], True) < self.max_params:
@@ -61,9 +54,7 @@ class ParameterExperiments:
         return networks
 
     def run_experiments(self, X_train, y_train, X_val, y_val):
-        """
-        הרצת ניסויים עם כל הארכיטקטורות
-        """
+      
         from ..optimizers.sgd import SGDOptimizer
         from .trainer import NetworkTrainer
 
@@ -75,13 +66,11 @@ class ParameterExperiments:
             print(f"Architecture: {dims}")
             print(f"Total parameters: {self.count_parameters(dims, is_resnet)}")
 
-            # יצירת מודל
             if is_resnet:
                 model = ResNet(dims)
             else:
                 model = NeuralNetwork(dims)
 
-            # הגדרת אופטימייזר ומאמן
             optimizer = SGDOptimizer(learning_rate=0.001, momentum=0.9)
             trainer = NetworkTrainer(
                 model=model,
